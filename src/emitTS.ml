@@ -186,6 +186,15 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             create_str ^ (comp_assign (Var x, et) e s) ^"\n" ^ (comp_comm_lst tl s)
             (* failwith "unimplemented declaration" *)
             (* x ^ " = " ^ string_of_texp e ^ ";" *)
+        | Require (et, x, e) ->
+            let create_str = match et with
+                (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)
+                (*| MatTyp (m, n) -> failwith "unimplemented MatTyp compile" (*"let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"*)*)
+                | _ -> "let "
+            in
+            create_str ^ (comp_assign (Var x, et) e s) ^"\n" ^ (comp_comm_lst tl s)
+            (* failwith "unimplemented declaration" *)
+            (* x ^ " = " ^ string_of_texp e ^ ";" *)
         | Assign (x, e) -> (comp_assign x e s) ^"\n" ^ (comp_comm_lst tl s)
         | AssignOp ((x, t), op, e) -> failwith "unimplemented assignop"
             (* (comp_assign x ((FnInv (op, (Var x, t), e)), t) s) ^ (comp_comm_lst tl s) *)

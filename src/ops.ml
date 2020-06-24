@@ -96,6 +96,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         print_string (string_of_ovalue v ^ "\n"); s'
     | Exp e -> snd (eval_texp e fns s)
     | Decl (_, x, e) -> failwith "unimplemented op"
+    | Require (_, x, e) -> failwith "unimplemented op"
     | Assign (x, e) -> failwith "unimplemented op"
     | AssignOp (x, op, e) -> failwith "unimplemented op"
     | If ((b, c1), el, c2) ->

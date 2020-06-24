@@ -726,6 +726,20 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
             | _ -> t) in
         check_assign cx t' (Var s) (snd result);
         bind_typ cx s ml t', TypedAst.Decl (typ_erase cx t', s, (exp_to_texp cx result))
+    | Require (ml, t, s, e) -> 
+        check_typ_valid cx t; 
+        let result = check_aexp cx e in
+        let t' = (match t with 
+            | AutoTyp -> (let t' = snd result in
+                match t' with
+                | FrameTyp _ | AnyFrameTyp -> 
+                    error cx ("Cannot write " ^ string_of_typ t' ^ " to auto")
+                | Literal _ | BotTyp -> 
+                    error cx ("Cannot infer the type of " ^ string_of_aexp e)
+                | _ -> t')
+            | _ -> t) in
+        check_assign cx t' (Var s) (snd result);
+        bind_typ cx s ml t', TypedAst.Decl (typ_erase cx t', s, (exp_to_texp cx result))
     | Assign (s, e) ->
         let x,t = check_aexp cx s in
         let result = check_aexp cx e in

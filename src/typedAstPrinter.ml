@@ -58,6 +58,8 @@ let rec string_of_comm (c: comm) : string =
   | Exp e -> string_of_texp e ^ ";"
   | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
     ^ " = " ^ string_of_texp e ^ ";"
+  | Require (t, s, e) -> string_of_typ t ^ " " ^ s 
+    ^ " := " ^ string_of_texp e ^ ";"
   | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"
   | AssignOp (x, op, e) -> string_of_texp x ^ " " 
     ^ op ^ "= " ^ (string_of_texp e)
