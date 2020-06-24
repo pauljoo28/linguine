@@ -924,7 +924,8 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
       | UnitTyp -> error cx "Print function cannot print void types"
       | _ -> (cx, TypedAst.Print (e, t)) )
   | Exp e -> (cx, TypedAst.Exp (exp_to_texp cx (check_aexp cx e)))
-  | Decl (ml, t, s, e) ->
+  | Decl (ml, t, s, e) 
+  | Require (ml, t, s, e) ->
       check_typ_valid cx t ;
       let result = check_aexp cx e in
       let t' =

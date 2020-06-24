@@ -73,7 +73,8 @@ and replace_type_in_args (a : args) (t : etyp) (r : etyp) : args =
 let rec replace_type_in_comm (c : comm) (t : etyp) (r : etyp) : comm =
   match c with
   | Print te -> Print (replace_type_in_texp te t r)
-  | Decl (et, x, te) ->
+  | Decl (et, x, te) 
+  | Require (et, x, te) ->
       Decl (replace_type et t r, x, replace_type_in_texp te t r)
   | Assign (x, te) -> Assign (x, replace_type_in_texp te t r)
   | AssignOp ((x, et), o, te) ->

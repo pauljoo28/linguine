@@ -341,7 +341,8 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp)
   | Skip -> ac
   | Print e -> (Print (et e), meta)
   | Exp e -> (Exp (et e), meta)
-  | Decl (ml, t, s, e) -> (Decl (ml, ft t, s, et e), meta)
+  | Decl (ml, t, s, e)
+  | Require (ml, t, s, e) -> (Decl (ml, ft t, s, et e), meta)
   | Assign (s, e) -> (Assign (et s, et e), meta)
   | AssignOp (s1, s2, e) -> (AssignOp (et s1, fs s2, et e), meta)
   | If (i, il, clo) ->

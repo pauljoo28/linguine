@@ -24,6 +24,7 @@ exception ParseException of string
 %token LPAREN
 %token RPAREN
 %token GETS
+%token REQUIRES
 %token IN
 %token OUT
 %token AS
@@ -249,6 +250,8 @@ let comm_element ==
     { Skip }
   | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
     { Decl(m, t, x, e) }
+  | (m, t) = terminated_list(modification, typ); x = id_hack; REQUIRES; e = node(exp);
+    { Require(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
   | x = node(assign_exp); GETS; e = node(exp);

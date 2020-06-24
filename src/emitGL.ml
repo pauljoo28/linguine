@@ -135,7 +135,8 @@ let rec string_of_comm (c : comm) : string =
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_texp e ^ ";"
   | Exp e -> string_of_texp e ^ ";"
-  | Decl (t, s, e) ->
+  | Decl (t, s, e) 
+  | Require (t, s, e) ->
       let ts = if is_core s then "" else string_of_typ t ^ " " in
       ts ^ s ^ " = " ^ string_of_texp e ^ ";"
   | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"

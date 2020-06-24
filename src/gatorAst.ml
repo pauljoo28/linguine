@@ -69,6 +69,7 @@ and comm =
   | Print of aexp
   | Exp of aexp
   | Decl of modification list * typ * string * aexp
+  | Require of modification list * typ * string * aexp
   | Assign of aexp * aexp
   | AssignOp of aexp * string * aexp
   | If of if_block * if_block list * acomm list option

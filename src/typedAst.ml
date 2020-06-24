@@ -33,6 +33,7 @@ type comm =
   | Print of texp
   | Exp of texp
   | Decl of etyp * id * texp
+  | Require of etyp * id * texp
   | Assign of texp * texp
   | AssignOp of texp * string * texp
   | If of if_block * if_block list * comm list option
