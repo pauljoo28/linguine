@@ -1,0 +1,6 @@
+EXCLUDE_QUERY_DIR
+B /Users/pauljoo/.opam/ocaml-base-compiler.4.08.1/lib/ocaml
+B ../_build/default/src/.gatorl.objs/byte
+S /Users/pauljoo/.opam/ocaml-base-compiler.4.08.1/lib/ocaml
+S .
+FLG -open Gatorl -w -40
