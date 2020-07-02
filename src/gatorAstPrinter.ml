@@ -52,6 +52,7 @@ let string_of_modification (m : modification) : string =
         "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
   | Canon -> "canon"
   | External -> "declare"
+  | Require -> "require"
 
 let string_of_mod_list (m : modification list) : string =
   string_of_separated_list " " string_of_modification m
@@ -102,6 +103,8 @@ and string_of_comm (c : comm) : string =
   | Decl (ml, t, s, e) ->
       string_of_mod_list ml ^ string_of_typ t ^ " " ^ s ^ " = "
       ^ string_of_aexp e ^ ";"
+  | Update (v) ->
+      "update " ^ string_of_aexp v ^ ";"
   | Assign (b, x) -> string_of_aexp b ^ " = " ^ string_of_aexp x ^ ";"
   | AssignOp (x, op, e) -> string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
   | If ((b, c1), elif_list, c2) ->
