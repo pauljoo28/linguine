@@ -35,11 +35,29 @@ type psi = string list
 
 (* type psi = (typ * fn_inv) list *)
 
+(* Stipulation Context *)
+(* Stores the expression in the requires statements *)
+type stip = aexp
+
+(* Dependencies Context *)
+(* Maps client stipulations to their dependencies *)
+type dependencies = string list
+
+(* Clients Context *)
+(* Maps dependency to its clients *)
+type clients = string list
+
+(* Valid Context *)
+(* Shows whether or not a client is valid *)
+type valid = VALID | INVALID
+
 (* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 
  * if a string 'x' is in lookup
  * then 'x' is in exactly one of the variant types of lookup 
  * otherwise 'x' is in none of the variant types *)
+(* We maintain the invariant that:
+ * if string "x" is in Stip then "x" is in Gamma as well *)
 (* Note that the parameterization variable names are _not_ necessarily unique, 
  * so aren't tracked in the lookup *)
 type exp_bindings = CGamma | CPhi
@@ -53,6 +71,10 @@ type binding =
   | Delta of delta
   | Chi of chi
   | Phi of phi
+  | Stip of stip
+  | Dep of dependencies
+  | Val of valid
+  | Cli of clients
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =
@@ -61,6 +83,10 @@ type binding_contexts =
   ; d: delta Assoc.context
   ; c: chi Assoc.context
   ; p: phi Assoc.context
+  ; s: stip Assoc.context
+  ; rd: dependencies Assoc.context
+  ; rc: clients Assoc.context
+  ; rv: valid Assoc.context
   ; el: exp_bindings Assoc.context
   ; tl: typ_bindings Assoc.context }
 

@@ -119,7 +119,11 @@ let init meta progs =
     ; d= Assoc.empty
     ; c= Assoc.empty
     ; p= Assoc.empty
+    ; s= Assoc.empty
     ; el= Assoc.empty
+    ; rd= Assoc.empty
+    ; rc= Assoc.empty
+    ; rv= Assoc.empty
     ; tl= Assoc.empty } in
   let cx =
     { ps= Assoc.empty
@@ -193,6 +197,20 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
+  (* Stip does not need this checking/ because we are always binding to Gamma in parallel *)
+  | Stip s' ->
+      update_bindings
+        {_b with s= Assoc.update x s' _b.s}
+  | Dep rd' ->
+      update_bindings
+        {_b with rd= Assoc.update x rd' _b.rd}
+  | Val rv' ->
+      update_bindings
+        {_b with rv= Assoc.update x rv' _b.rv}
+  | Cli rc' ->
+      update_bindings
+        {_b with rc= Assoc.update x rc' _b.rc}
+
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : exp_bindings) : contexts =
@@ -253,6 +271,30 @@ let get_typ (cx : contexts) (id : string) : tau =
   | Some t -> t
   | _ -> error cx ("Undefined type " ^ id)
 
+let get_stip (cx : contexts) (id : string) : aexp =
+  if Assoc.mem id cx._bindings.s then
+    Assoc.lookup id cx._bindings.s
+  else
+    failwith "Stip is undefined"
+
+let get_val (cx : contexts) (id : string) : valid =
+  if Assoc.mem id cx._bindings.rv then
+    Assoc.lookup id cx._bindings.rv
+  else
+    failwith "Valid is undefined"
+
+let get_dep (cx : contexts) (id : string) : string list =
+  if Assoc.mem id cx._bindings.rd then
+    Assoc.lookup id cx._bindings.rd
+  else
+    failwith "Dependents are undefined"
+
+let get_cli (cx : contexts) (id : string) : string list =
+  if Assoc.mem id cx._bindings.rc then
+    Assoc.lookup id cx._bindings.rc
+  else
+    failwith "Clients are undefined"
+
 let get_var (cx : contexts) (x : string) : typ =
   match find_exp cx x with
   | Some (Gamma (_, g)) -> g
@@ -287,6 +329,10 @@ let get_functions (cx : contexts) (id : string) : phi =
   match get_functions_safe cx id with
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
+
+(* *)
+let is_declarative (cx : contexts) (id : string) : bool =
+  Assoc.mem id cx._bindings.rd
 
 (* Adds the function 'f' to the context *)
 (* Requires information on the declaraing class name if applicable *)
@@ -341,7 +387,11 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp)
   | Skip -> ac
   | Print e -> (Print (et e), meta)
   | Exp e -> (Exp (et e), meta)
-  | Decl (ml, t, s, e) -> (Decl (ml, ft t, s, et e), meta)
+  | Decl (b, ml, t, s, e) -> (Decl (b, ml, ft t, s, et e), meta)
+  | Update (v) -> begin
+      let var = string_of_aexp v in
+      (Assign (et v, et (get_stip cx var)), meta)
+    end
   | Assign (s, e) -> (Assign (et s, et e), meta)
   | AssignOp (s1, s2, e) -> (AssignOp (et s1, fs s2, et e), meta)
   | If (i, il, clo) ->

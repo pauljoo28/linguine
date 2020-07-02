@@ -1,0 +1,94 @@
+declare int +(int x, int y);
+declare bool <=(int x, int y);
+declare int ++(int x);
+
+void main() {
+
+    int a = 2;
+
+    // Normal
+    int x = 2;
+    int y = 3;
+
+    int dec1 := x;
+    int dec2 := x + y;
+
+    int dec3 := dec1 + y;
+    int dec4 := dec1 + dec2;
+
+    int dec5 := y;
+
+    x = 3;
+
+    int test = dec5;
+
+    // Causes failure
+    // test = dec4; 
+    // test = dec3;
+    // update dec3;
+
+    update dec1;
+    update dec3;
+    test = dec3;
+
+    
+    // if statement
+    if (true) {
+      x = 3;
+    }
+
+    update dec1;
+
+    // Should fail: test = dec1;
+
+    if (true) {
+      x = 3;
+    } else {
+      update dec1;
+    }
+
+    // Should fail: test = dec1;
+    
+    if (true) {
+      update dec1;
+    } elif (true) {
+      x = 3;
+    } else {
+      update dec1;
+    }
+
+    // Should fail: test = dec1;
+
+    if (true) {
+      update dec1;
+    } elif (true) {
+      update dec1;
+    } else {
+      update dec1;
+    }
+
+    // TODO: Fails for now
+    // test = dec1;
+    
+    
+    // For loops
+    
+    for (int i = 0; i <= 9; i++) {
+      update dec1;
+    }
+
+    // Should fail: test = dec1;
+
+    // Arrays
+    update dec1;
+
+    int[1] dec6 := [dec1];
+
+    x = 5;
+
+    update dec1;
+    update dec6;
+
+    int[1] test1 = dec6;
+
+}
