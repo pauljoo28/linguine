@@ -8,6 +8,8 @@ open CheckUtil
 open CheckContexts
 open Glsl_ops
 
+open CheckDeclarativeUtil
+
 (* The set of types that can't be written down shouldn't be
  * inferred by things like 'auto' *)
 let is_illegal_typ (cx : contexts) (t : typ) : bool =
@@ -868,11 +870,41 @@ let check_swizzle (cx : contexts) (args : (TypedAst.exp * typ) list) :
 let rec check_aexp (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
   check_exp (with_meta cx meta) e
 
+and check_assign_var (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
+  debug_print (">> check_assign_var " ^ string_of_exp e) ;
+  match e with
+  | Val v -> (TypedAst.Val v, check_val cx v)
+  | Var v -> (TypedAst.Var v, get_var cx v)
+  | Arr a -> check_arr cx a
+  | As (e', t) ->
+      let er, tr = check_aexp cx e' in
+      (er, check_as_exp cx tr t)
+  | In (e', t) ->
+      let _, tr = check_aexp cx e' in
+      check_aexp cx (check_in_exp cx e' tr t)
+  | Index (l, r) ->
+      let el = check_aexp cx l in
+      let er = check_aexp cx r in
+      ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
+      , check_index_exp cx (snd el) (snd er) )
+  | FnInv ("swizzle", _, args) -> (
+    try check_swizzle cx (List.map (check_aexp cx) args)
+    with TypeException e -> (
+      match args with
+      (* See if this is actually something like mesh.normals in which case treat it like one var *)
+      | [(Var s1, _); (Val (StringVal s2), _)] ->
+          check_exp cx (Var (s1 ^ "." ^ s2))
+      | _ -> raise (TypeException e) ) )
+  | FnInv (x, pr, args) ->
+      let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
+      (TypedAst.FnInv (a, b, c), t)
+  
+
 and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   debug_print (">> check_exp " ^ string_of_exp e) ;
   match e with
   | Val v -> (TypedAst.Val v, check_val cx v)
-  | Var v -> (TypedAst.Var v, get_var cx v)
+  | Var v -> CheckDeclarativeUtil.check_valid cx v; (TypedAst.Var v, get_var cx v)
   | Arr a -> check_arr cx a
   | As (e', t) ->
       let er, tr = check_aexp cx e' in
@@ -924,7 +956,7 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
       | UnitTyp -> error cx "Print function cannot print void types"
       | _ -> (cx, TypedAst.Print (e, t)) )
   | Exp e -> (cx, TypedAst.Exp (exp_to_texp cx (check_aexp cx e)))
-  | Decl (ml, t, s, e) ->
+  | Decl (b, ml, t, s, e) ->
       check_typ_valid cx t ;
       let result = check_aexp cx e in
       let t' =
@@ -939,14 +971,19 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
             | _ -> t' )
         | _ -> t in
       check_assign cx t' (Var s) (snd result) ;
-      ( bind_typ cx s ml t'
-      , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
+      let cx' = CheckDeclarativeUtil.add_client cx e s in
+      (* if b is true then bind to Stip *)
+      bind_typ (if b then CheckDeclarativeUtil.bind_stip cx' s ml e else cx') s ml t'
+        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx' result)
+  | Update (s) ->
+      let e = get_stip cx (string_of_aexp s) in
+      let cx_check = CheckDeclarativeUtil.update_valid cx s in
+      create_assign cx_check s e
   | Assign (s, e) ->
-      let x, t = check_aexp cx s in
-      let result = check_aexp cx e in
-      check_assign cx t (fst s) (snd result) ;
-      (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
+      let cx' = CheckDeclarativeUtil.invalidate cx s in
+      create_assign cx' s e
   | AssignOp (s, b, e) -> (
+      let cx = CheckDeclarativeUtil.invalidate cx s in
       let cx', c' =
         check_acomm cx
           (Assign (s, (FnInv (b, [], [(fst s, snd e); e]), cx.meta)), cx.meta)
@@ -958,25 +995,38 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
   | If ((b, c1), el, c2) ->
       let check_if b c =
         let er = check_aexp cx b in
-        let _, cr = check_comm_lst cx c in
-        if is_subtype cx (snd er) BoolTyp then (exp_to_texp cx er, cr)
+        let cx, cr = check_comm_lst cx c in
+        if is_subtype cx (snd er) BoolTyp then cx, (exp_to_texp cx er, cr)
         else error cx "Expected boolean expression for if condition" in
-      let c2r =
+      let (cx1, if1) = check_if b c1 in
+      let (cx2, if2) = List.split (List.map (fun (b, c) -> check_if b c) el) in
+      let (cx3, if3) =
         match c2 with
-        | Some e -> Some (snd (check_comm_lst cx e))
-        | None -> None in
-      ( cx
+        | Some e -> 
+            let result = check_comm_lst cx e in
+            fst result, Some (snd result)
+        | None -> cx, None in
+      ( CheckDeclarativeUtil.fold_intersect_valids cx cx1 cx2 cx3
       , TypedAst.If
-          (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r) )
+          (if1, if2, if3) )
   | For (c1, b, c2, cl) ->
       let cx', c1r = check_acomm cx c1 in
       let br, brt = check_aexp cx' b in
       let btexp = exp_to_texp cx (br, brt) in
       let cx'', c2r = check_acomm cx' c2 in
-      (cx, TypedAst.For (c1r, btexp, c2r, snd (check_comm_lst cx'' cl)))
+      let result = check_comm_lst cx'' cl in
+      (CheckDeclarativeUtil.intersect_valids cx (fst result)
+      , TypedAst.For (c1r, btexp, c2r, snd result))
   | Return e ->
       (cx, TypedAst.Return (Option.map (exp_to_texp cx |- check_aexp cx) e))
   | ExactCodeComm ec -> (cx, TypedAst.ExactCodeComm ec)
+
+(* Checks Update and Assign *)
+and create_assign (cx : contexts) (s : aexp) (e : aexp) : contexts * TypedAst.comm =
+  let x, t = check_assign_var cx s in
+  let result = check_aexp cx e in
+  check_assign cx t (fst s) (snd result) ;
+  (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx : contexts) (cl : acomm list) :

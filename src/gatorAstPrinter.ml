@@ -99,9 +99,11 @@ and string_of_comm (c : comm) : string =
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_aexp e ^ ";"
   | Exp e -> string_of_aexp e ^ ";"
-  | Decl (ml, t, s, e) ->
+  | Decl (b, ml, t, s, e) ->
       string_of_mod_list ml ^ string_of_typ t ^ " " ^ s ^ " = "
       ^ string_of_aexp e ^ ";"
+  | Update (v) ->
+      "update " ^ string_of_aexp v ^ ";"
   | Assign (b, x) -> string_of_aexp b ^ " = " ^ string_of_aexp x ^ ";"
   | AssignOp (x, op, e) -> string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
   | If ((b, c1), elif_list, c2) ->
