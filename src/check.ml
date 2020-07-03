@@ -939,17 +939,14 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
             | _ -> t' )
         | _ -> t in
       check_assign cx t' (Var s) (snd result) ;
-      if b then
-        ( bind_typ (bind_stip cx s ml e) s ml t'
-        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
-      else
-        ( bind_typ cx s ml t'
-        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
+      (* if b is true then bind to Stip *)
+      bind_typ (if b then bind_stip cx s ml e else cx) s ml t'
+        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result)
+  | Update (s) ->
+      let e = get_stip cx (string_of_aexp s) in
+      create_assign cx s e
   | Assign (s, e) ->
-      let x, t = check_aexp cx s in
-      let result = check_aexp cx e in
-      check_assign cx t (fst s) (snd result) ;
-      (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
+      create_assign cx s e
   | AssignOp (s, b, e) -> (
       let cx', c' =
         check_acomm cx
@@ -981,6 +978,13 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
   | Return e ->
       (cx, TypedAst.Return (Option.map (exp_to_texp cx |- check_aexp cx) e))
   | ExactCodeComm ec -> (cx, TypedAst.ExactCodeComm ec)
+
+(* Checks Update and Assign *)
+and create_assign (cx : contexts) (s : aexp) (e : aexp) : contexts * TypedAst.comm =
+  let x, t = check_aexp cx s in
+  let result = check_aexp cx e in
+  check_assign cx t (fst s) (snd result) ;
+  (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx : contexts) (cl : acomm list) :

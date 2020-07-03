@@ -66,6 +66,7 @@ exception ParseException of string
 %token FOR
 %token SKIP
 %token PRINT
+%token UPDATE
 %token SEMI
 %token INTTYP
 %token FLOATTYP
@@ -249,15 +250,17 @@ let comm_element ==
   | SKIP;
     { Skip }
   | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
-    { Decl(true, m, t, x, e) }
-  | (m, t) = terminated_list(modification, typ); x = id_hack; REQUIRES; e = node(exp);
     { Decl(false, m, t, x, e) }
+  | (m, t) = terminated_list(modification, typ); x = id_hack; REQUIRES; e = node(exp);
+    { Decl(true, m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
   | x = node(assign_exp); GETS; e = node(exp);
     < Assign >
   | x = node(assign_exp); a = assignop; e = node(exp);
     < AssignOp >
+  | UPDATE; e = node(exp);
+    < Update >
   | PRINT; e = node(exp);
     < Print >
   | RETURN; e = node(exp)?;

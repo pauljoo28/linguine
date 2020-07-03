@@ -121,8 +121,7 @@ let init meta progs =
     ; p= Assoc.empty
     ; s= Assoc.empty
     ; el= Assoc.empty
-    ; tl= Assoc.empty
-    ; sl= Assoc.empty } in
+    ; tl= Assoc.empty } in
   let cx =
     { ps= Assoc.empty
     ; pm= Assoc.empty
@@ -167,12 +166,18 @@ let find_typ cx x =
     | CChi -> Some (Chi (Assoc.lookup x cx._bindings.c))
   else None
 
+let find_stip cx x =
+  if Assoc.mem x cx._bindings.el then
+      match Assoc.lookup x cx._bindings.el with
+      | CGamma -> Some (Stip (Assoc.lookup x cx._bindings.s))
+      | _ -> failwith "Stip and gamma invariant not conserved"
+  else None
+
 (* Binds a string with value to the correct lookup context *)
 let bind (cx : contexts) (x : string) (b : binding) : contexts =
   let fail _ = error cx ("Duplicate use of the name " ^ x) in
   let ce _ = if Assoc.mem x cx._bindings.el then fail () in
   let ct _ = if Assoc.mem x cx._bindings.tl then fail () in
-  let cs _ = if Assoc.mem x cx._bindings.sl then fail () in
   let update_bindings b' = {cx with _bindings= b'} in
   let _b = cx._bindings in
   match b with
@@ -196,10 +201,10 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
+  (* Stip does not need this checking because we are always binding to Gamma in parallel *)
   | Stip s' ->
-      cs ();
       update_bindings
-        {_b with sl= Assoc.update x CStip _b.sl; s= Assoc.update x s' _b.s}
+        {_b with s= Assoc.update x s' _b.s}
 
 
 (* Clears the given lookup context of elements *)
@@ -260,10 +265,18 @@ let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
 let get_typ_safe (cx : contexts) (id : string) : tau option =
   match find_typ cx id with Some (Tau t) -> Some t | _ -> None
 
+let get_stip_safe (cx : contexts) (id : string) : stip option =
+  match find_stip cx id with Some (Stip s) -> Some s | _ -> None
+
 let get_typ (cx : contexts) (id : string) : tau =
   match get_typ_safe cx id with
   | Some t -> t
   | _ -> error cx ("Undefined type " ^ id)
+
+let get_stip (cx : contexts) (id : string) : aexp =
+  match get_stip_safe cx id with
+  | Some s -> s
+  | _ -> error cx ("Undefined stipulation " ^ id)
 
 let get_var (cx : contexts) (x : string) : typ =
   match find_exp cx x with
@@ -354,6 +367,10 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp)
   | Print e -> (Print (et e), meta)
   | Exp e -> (Exp (et e), meta)
   | Decl (b, ml, t, s, e) -> (Decl (b, ml, ft t, s, et e), meta)
+  | Update (v) -> begin
+      let var = string_of_aexp v in
+      (Assign (et v, et (get_stip cx var)), meta)
+    end
   | Assign (s, e) -> (Assign (et s, et e), meta)
   | AssignOp (s1, s2, e) -> (AssignOp (et s1, fs s2, et e), meta)
   | If (i, il, clo) ->

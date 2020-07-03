@@ -78,6 +78,7 @@ rule read = parse
   | ")"             { RPAREN }
   | "="             { GETS }
   | ":="            { REQUIRES }
+  | "update"        { UPDATE }
   | "=="            { EQ }
   | "<="            { LEQ }
   | ">="            { GEQ }
