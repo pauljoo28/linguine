@@ -70,6 +70,7 @@ and comm =
   | Exp of aexp
   (* bool is true if requires statement, false if normal *)
   | Decl of bool * modification list * typ * string * aexp
+  | Update of aexp
   | Assign of aexp * aexp
   | AssignOp of aexp * string * aexp
   | If of if_block * if_block list * acomm list option

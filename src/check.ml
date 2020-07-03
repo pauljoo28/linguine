@@ -945,6 +945,11 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
       else
         ( bind_typ cx s ml t'
         , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
+  | Update (v) ->
+      let x, t = check_aexp cx v in
+      let result = check_aexp cx (get_stip cx (string_of_aexp v)) in
+      check_assign cx t (fst v) (snd result) ;
+      (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
   | Assign (s, e) ->
       let x, t = check_aexp cx s in
       let result = check_aexp cx e in
