@@ -939,8 +939,12 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
             | _ -> t' )
         | _ -> t in
       check_assign cx t' (Var s) (snd result) ;
-      ( bind_typ cx s ml t'
-      , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
+      if b then
+        ( bind_typ (bind_stip cx s ml e) s ml t'
+        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
+      else
+        ( bind_typ cx s ml t'
+        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
   | Assign (s, e) ->
       let x, t = check_aexp cx s in
       let result = check_aexp cx e in

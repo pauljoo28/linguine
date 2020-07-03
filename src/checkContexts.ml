@@ -35,6 +35,10 @@ type psi = string list
 
 (* type psi = (typ * fn_inv) list *)
 
+(* Stipulation Context *)
+(* Stores the expression in the requires statements *)
+type stip = aexp
+
 (* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 
  * if a string 'x' is in lookup
@@ -44,6 +48,7 @@ type psi = string list
  * so aren't tracked in the lookup *)
 type exp_bindings = CGamma | CPhi
 type typ_bindings = CTau | CChi | CDelta
+type stip_bindings = CStip
 
 (* Variant type for correctly abstracting storage of a new variable
  * Used with contexts to maintain the invariant described in 'lookup' *)
@@ -53,6 +58,7 @@ type binding =
   | Delta of delta
   | Chi of chi
   | Phi of phi
+  | Stip of stip
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =
@@ -61,8 +67,10 @@ type binding_contexts =
   ; d: delta Assoc.context
   ; c: chi Assoc.context
   ; p: phi Assoc.context
+  ; s: stip Assoc.context
   ; el: exp_bindings Assoc.context
-  ; tl: typ_bindings Assoc.context }
+  ; tl: typ_bindings Assoc.context 
+  ; sl: stip_bindings Assoc.context }
 
 (* A type to contain every non-lookup context to simplify definitions *)
 (* We use a preceding '_' to denote elements which shouldn't be accessed directly *)

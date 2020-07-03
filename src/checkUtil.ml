@@ -119,8 +119,10 @@ let init meta progs =
     ; d= Assoc.empty
     ; c= Assoc.empty
     ; p= Assoc.empty
+    ; s= Assoc.empty
     ; el= Assoc.empty
-    ; tl= Assoc.empty } in
+    ; tl= Assoc.empty
+    ; sl= Assoc.empty } in
   let cx =
     { ps= Assoc.empty
     ; pm= Assoc.empty
@@ -170,6 +172,7 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   let fail _ = error cx ("Duplicate use of the name " ^ x) in
   let ce _ = if Assoc.mem x cx._bindings.el then fail () in
   let ct _ = if Assoc.mem x cx._bindings.tl then fail () in
+  let cs _ = if Assoc.mem x cx._bindings.sl then fail () in
   let update_bindings b' = {cx with _bindings= b'} in
   let _b = cx._bindings in
   match b with
@@ -193,6 +196,11 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
+  | Stip s' ->
+      cs ();
+      update_bindings
+        {_b with sl= Assoc.update x CStip _b.sl; s= Assoc.update x s' _b.s}
+
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : exp_bindings) : contexts =
@@ -230,6 +238,10 @@ let has_modification (cx : contexts) (ml : modification list) (m : modification)
 let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
     contexts =
   bind cx id (Gamma (has_modification cx ml Canon, t))
+
+let bind_stip (cx : contexts) (id : string) (ml : modification list) (e : aexp) :
+    contexts =
+  bind cx id (Stip e)
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
