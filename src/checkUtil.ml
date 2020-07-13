@@ -178,7 +178,6 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   let fail _ = error cx ("Duplicate use of the name " ^ x) in
   let ce _ = if Assoc.mem x cx._bindings.el then fail () in
   let ct _ = if Assoc.mem x cx._bindings.tl then fail () in
-  let cs _ = if Assoc.mem x cx._bindings.sl then fail () in
   let update_bindings b' = {cx with _bindings= b'} in
   let _b = cx._bindings in
   match b with
@@ -203,9 +202,9 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
   | Stip s' ->
-      cs ();
+      ct () ;
       update_bindings
-        {_b with sl= Assoc.update x CStip _b.sl; s= Assoc.update x s' _b.s}
+        {_b with tl= Assoc.update x CTau _b.tl; s= Assoc.update x s' _b.s}
 
 
 (* Clears the given lookup context of elements *)

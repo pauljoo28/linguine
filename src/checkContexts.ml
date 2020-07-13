@@ -44,11 +44,12 @@ type stip = aexp
  * if a string 'x' is in lookup
  * then 'x' is in exactly one of the variant types of lookup 
  * otherwise 'x' is in none of the variant types *)
+(* We maintain the invariant that:
+   if string "x" is in Stip then "x" is in Tau as well *)
 (* Note that the parameterization variable names are _not_ necessarily unique, 
  * so aren't tracked in the lookup *)
 type exp_bindings = CGamma | CPhi
 type typ_bindings = CTau | CChi | CDelta
-type stip_bindings = CStip
 
 (* Variant type for correctly abstracting storage of a new variable
  * Used with contexts to maintain the invariant described in 'lookup' *)
@@ -69,8 +70,7 @@ type binding_contexts =
   ; p: phi Assoc.context
   ; s: stip Assoc.context
   ; el: exp_bindings Assoc.context
-  ; tl: typ_bindings Assoc.context 
-  ; sl: stip_bindings Assoc.context }
+  ; tl: typ_bindings Assoc.context }
 
 (* A type to contain every non-lookup context to simplify definitions *)
 (* We use a preceding '_' to denote elements which shouldn't be accessed directly *)
