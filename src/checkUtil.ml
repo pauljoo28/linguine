@@ -121,8 +121,7 @@ let init meta progs =
     ; p= Assoc.empty
     ; s= Assoc.empty
     ; el= Assoc.empty
-    ; tl= Assoc.empty
-    ; sl= Assoc.empty } in
+    ; tl= Assoc.empty } in
   let cx =
     { ps= Assoc.empty
     ; pm= Assoc.empty
@@ -168,9 +167,10 @@ let find_typ cx x =
   else None
 
 let find_stip cx x =
-  if Assoc.mem x cx._bindings.sl then
-      match Assoc.lookup x cx._bindings.sl with
-      | CStip -> Some (Stip (Assoc.lookup x cx._bindings.s))
+  if Assoc.mem x cx._bindings.el then
+      match Assoc.lookup x cx._bindings.el with
+      | CGamma -> Some (Stip (Assoc.lookup x cx._bindings.s))
+      | _ -> failwith "Stip and gamma invariant not conserved"
   else None
 
 (* Binds a string with value to the correct lookup context *)
@@ -201,10 +201,11 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
+(* TODO: Think if Stip relation with CGamma is important *)
   | Stip s' ->
-      ct () ;
+      ce () ;
       update_bindings
-        {_b with tl= Assoc.update x CTau _b.tl; s= Assoc.update x s' _b.s}
+        {_b with el= Assoc.update x CGamma _b.el; s= Assoc.update x s' _b.s}
 
 
 (* Clears the given lookup context of elements *)
