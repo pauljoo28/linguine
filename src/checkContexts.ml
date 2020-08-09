@@ -73,6 +73,7 @@ type binding =
   | Phi of phi
   | Stip of stip
   | Dep of dependencies
+  | Val of valid
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =

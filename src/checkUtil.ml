@@ -3,8 +3,6 @@ open GatorAst
 open GatorAstPrinter
 open CheckContexts
 
-open CheckDeclarativeUtil
-
 exception TypeException of string
 
 let rename_fn (f : string -> string) ((a, b, id, c, d) : fn_typ) : fn_typ =
@@ -213,6 +211,9 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   | Dep rd' ->
       update_bindings
         {_b with rd= Assoc.update x rd' _b.rd}
+  | Val rv' ->
+      update_bindings
+        {_b with rv= Assoc.update x rv' _b.rv}
 
 
 (* Clears the given lookup context of elements *)
@@ -251,10 +252,6 @@ let has_modification (cx : contexts) (ml : modification list) (m : modification)
 let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
     contexts =
   bind cx id (Gamma (has_modification cx ml Canon, t))
-
-let bind_stip (cx : contexts) (id : string) (ml : modification list) (e : aexp) :
-    contexts =
-  bind (bind cx id (Dep (CheckDeclarativeUtil.specials e))) id (Stip e)
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =

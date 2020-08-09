@@ -8,6 +8,8 @@ open CheckUtil
 open CheckContexts
 open Glsl_ops
 
+open CheckDeclarativeUtil
+
 (* The set of types that can't be written down shouldn't be
  * inferred by things like 'auto' *)
 let is_illegal_typ (cx : contexts) (t : typ) : bool =
@@ -872,7 +874,7 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   debug_print (">> check_exp " ^ string_of_exp e) ;
   match e with
   | Val v -> (TypedAst.Val v, check_val cx v)
-  | Var v -> (TypedAst.Var v, get_var cx v)
+  | Var v -> CheckDeclarativeUtil.check_valid cx v; Printf.printf "CAMEL %s" v; (TypedAst.Var v, get_var cx v)
   | Arr a -> check_arr cx a
   | As (e', t) ->
       let er, tr = check_aexp cx e' in
@@ -940,7 +942,7 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
         | _ -> t in
       check_assign cx t' (Var s) (snd result) ;
       (* if b is true then bind to Stip *)
-      bind_typ (if b then bind_stip cx s ml e else cx) s ml t'
+      bind_typ (if b then CheckDeclarativeUtil.bind_stip cx s ml e else cx) s ml t'
         , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result)
   | Update (s) ->
       let e = get_stip cx (string_of_aexp s) in
