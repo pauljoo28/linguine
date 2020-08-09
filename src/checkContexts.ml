@@ -39,6 +39,18 @@ type psi = string list
 (* Stores the expression in the requires statements *)
 type stip = aexp
 
+(* Dependencies Context *)
+(* Maps client stipulations to their dependencies *)
+type dependencies = string list
+
+(* Clients Context *)
+(* Maps dependency to its clients *)
+type clients = string list
+
+(* Valid Context *)
+(* Shows whether or not a client is valid *)
+type valid = VALID | INVALID
+
 (* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 
  * if a string 'x' is in lookup
@@ -60,6 +72,7 @@ type binding =
   | Chi of chi
   | Phi of phi
   | Stip of stip
+  | Dep of dependencies
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =
@@ -69,6 +82,9 @@ type binding_contexts =
   ; c: chi Assoc.context
   ; p: phi Assoc.context
   ; s: stip Assoc.context
+  ; rd: dependencies Assoc.context
+  ; rc: clients Assoc.context
+  ; rv: valid Assoc.context
   ; el: exp_bindings Assoc.context
   ; tl: typ_bindings Assoc.context }
 
