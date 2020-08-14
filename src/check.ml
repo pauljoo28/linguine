@@ -946,7 +946,8 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
         , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result)
   | Update (s) ->
       let e = get_stip cx (string_of_aexp s) in
-      create_assign cx s e
+      let cx_check = CheckDeclarativeUtil.update_valid cx s in
+      create_assign cx_check s e
   | Assign (s, e) ->
       create_assign cx s e
   | AssignOp (s, b, e) -> (

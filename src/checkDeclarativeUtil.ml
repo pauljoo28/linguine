@@ -47,7 +47,6 @@ let check_valid (cx : contexts) (v : string) : unit =
   else
     ()
 
-(* 
 let rec helper_update_valid (spec_lst : string list) (valids : valid context) : unit =
   match spec_lst with
   | [] -> ()
@@ -55,11 +54,17 @@ let rec helper_update_valid (spec_lst : string list) (valids : valid context) : 
     if Assoc.mem h valids then
       match Assoc.lookup h valids with
       | INVALID -> failwith "%s has not been updated yet"
-      | VALID -> helper_check_valid t valids
+      | VALID -> helper_update_valid t valids
     else
       helper_update_valid t valids
   end
 
-let update_valid (cx : contexts) (v : string) : contexts =
-
-*)
+let update_valid (cx : contexts) (e : aexp) : contexts =
+  let (x, t) = e in
+  match x with
+  | Var v -> begin
+      let spec_lst = Assoc.lookup v cx._bindings.rd in
+      helper_update_valid spec_lst cx._bindings.rv;
+      CheckUtil.bind cx v (Val (VALID))
+    end
+  | _ -> failwith "Update expression can only be used with a variable"
