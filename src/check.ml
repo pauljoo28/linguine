@@ -941,16 +941,19 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
             | _ -> t' )
         | _ -> t in
       check_assign cx t' (Var s) (snd result) ;
+      let cx' = CheckDeclarativeUtil.add_client cx e s in
       (* if b is true then bind to Stip *)
-      bind_typ (if b then CheckDeclarativeUtil.bind_stip cx s ml e else cx) s ml t'
-        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result)
+      bind_typ (if b then CheckDeclarativeUtil.bind_stip cx' s ml e else cx') s ml t'
+        , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx' result)
   | Update (s) ->
       let e = get_stip cx (string_of_aexp s) in
       let cx_check = CheckDeclarativeUtil.update_valid cx s in
       create_assign cx_check s e
   | Assign (s, e) ->
-      create_assign cx s e
+      let cx' = CheckDeclarativeUtil.invalidate cx s in
+      create_assign cx' s e
   | AssignOp (s, b, e) -> (
+      let cx = CheckDeclarativeUtil.invalidate cx s in
       let cx', c' =
         check_acomm cx
           (Assign (s, (FnInv (b, [], [(fst s, snd e); e]), cx.meta)), cx.meta)

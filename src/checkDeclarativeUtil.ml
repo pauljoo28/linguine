@@ -68,3 +68,44 @@ let update_valid (cx : contexts) (e : aexp) : contexts =
       CheckUtil.bind cx v (Val (VALID))
     end
   | _ -> failwith "Update expression can only be used with a variable"
+
+let rec helper_invalidate_lst (cx : contexts) (cli_lst : string list) : contexts =
+  match cli_lst with
+  | [] -> cx
+  | h :: t ->
+      let cx' = helper_invalidate cx h in
+      helper_invalidate_lst cx' t
+
+and helper_invalidate (cx : contexts) (v : string) : contexts = 
+  if Assoc.mem v cx._bindings.rc then
+    let cx' = CheckUtil.bind cx v (Val (INVALID)) in
+    let cli_lst = Assoc.lookup v cx._bindings.rc in
+    helper_invalidate_lst cx' cli_lst
+  else
+    cx
+
+let invalidate (cx : contexts) (e : aexp) : contexts =
+  let (x, t) = e in
+  match x with
+  | Var v -> begin
+      helper_invalidate cx v
+    end
+  | _ -> failwith "Invalidate expression can only be used with a variable"
+
+let rec helper_add_client (cx : contexts) (spec_lst : string list) (v : string) : contexts =
+  match spec_lst with
+  | [] -> cx
+  | h :: t ->
+      if Assoc.mem h cx._bindings.rc then
+        let cli_lst = Assoc.lookup h cx._bindings.rc in
+        let cx' = CheckUtil.bind cx h (Cli (h :: cli_lst)) in
+        helper_add_client cx' t v
+      else
+        let cx' = CheckUtil.bind cx h (Cli [h]) in
+        helper_add_client cx' t v
+      
+
+let add_client (cx : contexts) (e : aexp) (v : string) : contexts =
+  let spec_lst = specials e in
+  helper_add_client cx spec_lst v
+  

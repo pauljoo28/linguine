@@ -74,6 +74,7 @@ type binding =
   | Stip of stip
   | Dep of dependencies
   | Val of valid
+  | Cli of clients
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =

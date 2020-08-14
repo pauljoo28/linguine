@@ -214,6 +214,9 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   | Val rv' ->
       update_bindings
         {_b with rv= Assoc.update x rv' _b.rv}
+  | Cli rc' ->
+      update_bindings
+        {_b with rc= Assoc.update x rc' _b.rc}
 
 
 (* Clears the given lookup context of elements *)
