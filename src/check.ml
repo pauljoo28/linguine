@@ -870,11 +870,41 @@ let check_swizzle (cx : contexts) (args : (TypedAst.exp * typ) list) :
 let rec check_aexp (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
   check_exp (with_meta cx meta) e
 
+and check_assign_var (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
+  debug_print (">> check_assign_var " ^ string_of_exp e) ;
+  match e with
+  | Val v -> (TypedAst.Val v, check_val cx v)
+  | Var v -> (TypedAst.Var v, get_var cx v)
+  | Arr a -> check_arr cx a
+  | As (e', t) ->
+      let er, tr = check_aexp cx e' in
+      (er, check_as_exp cx tr t)
+  | In (e', t) ->
+      let _, tr = check_aexp cx e' in
+      check_aexp cx (check_in_exp cx e' tr t)
+  | Index (l, r) ->
+      let el = check_aexp cx l in
+      let er = check_aexp cx r in
+      ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
+      , check_index_exp cx (snd el) (snd er) )
+  | FnInv ("swizzle", _, args) -> (
+    try check_swizzle cx (List.map (check_aexp cx) args)
+    with TypeException e -> (
+      match args with
+      (* See if this is actually something like mesh.normals in which case treat it like one var *)
+      | [(Var s1, _); (Val (StringVal s2), _)] ->
+          check_exp cx (Var (s1 ^ "." ^ s2))
+      | _ -> raise (TypeException e) ) )
+  | FnInv (x, pr, args) ->
+      let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
+      (TypedAst.FnInv (a, b, c), t)
+  
+
 and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   debug_print (">> check_exp " ^ string_of_exp e) ;
   match e with
   | Val v -> (TypedAst.Val v, check_val cx v)
-  | Var v -> CheckDeclarativeUtil.check_valid cx v; Printf.printf "CAMEL %s" v; (TypedAst.Var v, get_var cx v)
+  | Var v -> CheckDeclarativeUtil.check_valid cx v; (TypedAst.Var v, get_var cx v)
   | Arr a -> check_arr cx a
   | As (e', t) ->
       let er, tr = check_aexp cx e' in
@@ -987,7 +1017,7 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
 
 (* Checks Update and Assign *)
 and create_assign (cx : contexts) (s : aexp) (e : aexp) : contexts * TypedAst.comm =
-  let x, t = check_aexp cx s in
+  let x, t = check_assign_var cx s in
   let result = check_aexp cx e in
   check_assign cx t (fst s) (snd result) ;
   (cx, TypedAst.Assign (exp_to_texp cx (x, t), exp_to_texp cx result))
