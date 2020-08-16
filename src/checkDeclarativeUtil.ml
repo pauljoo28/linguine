@@ -114,4 +114,25 @@ let rec helper_add_client (cx : contexts) (spec_lst : string list) (v : string) 
 let add_client (cx : contexts) (e : aexp) (v : string) : contexts =
   let spec_lst = specials e in
   helper_add_client cx spec_lst v
+
+let valid_OR (v1 : valid) (v2 : valid) : valid =
+  match v1, v2 with
+  | VALID, VALID -> VALID
+  | _ -> INVALID
   
+let rec helper_intersect_valids (keys : string list) (rv : valid context) (rv' : valid context) : valid context =
+  match keys with
+  | [] -> Assoc.empty
+  | h :: t ->
+      let v = valid_OR (Assoc.lookup h rv) (Assoc.lookup h rv') in
+      Assoc.update h v (helper_intersect_valids t rv rv')
+  
+let intersect_valids (cx : contexts) (cx' : contexts) : contexts =
+  let keys = Assoc.keys cx._bindings.rv in
+  let rv' = helper_intersect_valids keys cx._bindings.rv cx'._bindings.rv in
+  let _b = cx._bindings in
+  let update_bindings b' = {cx with _bindings= b'} in
+  update_bindings {_b with rv= rv'}
+
+let fold_intersect_valids (cx0 : contexts) (cx1 : contexts) (cx2: contexts list) (cx3 : contexts) : contexts =
+  intersect_valids (List.fold_left intersect_valids cx0 (cx1 :: cx2)) cx3

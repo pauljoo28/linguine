@@ -995,22 +995,28 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
   | If ((b, c1), el, c2) ->
       let check_if b c =
         let er = check_aexp cx b in
-        let _, cr = check_comm_lst cx c in
-        if is_subtype cx (snd er) BoolTyp then (exp_to_texp cx er, cr)
+        let cx, cr = check_comm_lst cx c in
+        if is_subtype cx (snd er) BoolTyp then cx, (exp_to_texp cx er, cr)
         else error cx "Expected boolean expression for if condition" in
-      let c2r =
+      let (cx1, if1) = check_if b c1 in
+      let (cx2, if2) = List.split (List.map (fun (b, c) -> check_if b c) el) in
+      let (cx3, if3) =
         match c2 with
-        | Some e -> Some (snd (check_comm_lst cx e))
-        | None -> None in
-      ( cx
+        | Some e -> 
+            let result = check_comm_lst cx e in
+            fst result, Some (snd result)
+        | None -> cx, None in
+      ( CheckDeclarativeUtil.fold_intersect_valids cx cx1 cx2 cx3
       , TypedAst.If
-          (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r) )
+          (if1, if2, if3) )
   | For (c1, b, c2, cl) ->
       let cx', c1r = check_acomm cx c1 in
       let br, brt = check_aexp cx' b in
       let btexp = exp_to_texp cx (br, brt) in
       let cx'', c2r = check_acomm cx' c2 in
-      (cx, TypedAst.For (c1r, btexp, c2r, snd (check_comm_lst cx'' cl)))
+      let result = check_comm_lst cx'' cl in
+      (CheckDeclarativeUtil.intersect_valids cx (fst result)
+      , TypedAst.For (c1r, btexp, c2r, snd result))
   | Return e ->
       (cx, TypedAst.Return (Option.map (exp_to_texp cx |- check_aexp cx) e))
   | ExactCodeComm ec -> (cx, TypedAst.ExactCodeComm ec)
