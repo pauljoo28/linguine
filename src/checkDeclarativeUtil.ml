@@ -20,10 +20,12 @@ let rec helper_specials ((e, meta) : aexp) (lst : string list) : string list =
   match e with
   | Val v -> lst
   | Var s -> s :: lst
+  | As (e', t)
+  | In (e', t) -> helper_specials_arr [e'] lst
   | Index (l, r) -> helper_specials_arr [l; r] lst
   | Arr args
   | FnInv (_, _, args) -> helper_specials_arr args lst
-  | _ -> failwith "Not allowed to have such an expression in a declaration"
+  (* | _ -> failwith "Not allowed to have such an expression in a declaration" *)
 
 and helper_specials_arr (aexps : aexp list) (lst : string list) : string list =
   match aexps with
@@ -81,10 +83,20 @@ and helper_invalidate (cx : contexts) (v : string) : contexts =
   let cli_lst = if (Assoc.mem v cx._bindings.rc) then Assoc.lookup v cx._bindings.rc else [] in
   helper_invalidate_lst cx' cli_lst
 
-let invalidate (cx : contexts) (e : aexp) : contexts =
+and helper_invalidate_arr (cx : contexts) (lst : aexp list) : contexts =
+  match lst with
+  | [] -> cx
+  | h :: t -> 
+    helper_invalidate_arr (invalidate cx h) t
+
+and invalidate (cx : contexts) (e : aexp) : contexts =
   let (x, t) = e in
   match x with
+  | Val v -> cx
   | Var v -> helper_invalidate cx v
+  | Index (l, r) -> helper_invalidate_arr cx [l; r]
+  | Arr args
+  | FnInv (_, _, args) -> helper_invalidate_arr cx args
   | _ -> failwith "Invalidate expression can only be used with a variable"
 
 let rec helper_add_client (cx : contexts) (spec_lst : string list) (v : string) : contexts =
