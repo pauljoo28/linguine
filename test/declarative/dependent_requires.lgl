@@ -1,0 +1,31 @@
+declare int +(int x, int y);
+
+void main(){
+
+    int x = 3;
+    int z = 3;
+    int matrix = 3;
+    int y := x + x + z + 4 + matrix;
+
+    x = 4;
+
+    update y;
+
+    int m = y + x;
+
+    x = 2;
+
+    update y;
+
+    int n = y + x;
+
+    int a := y;
+
+    x = 3;
+
+    update y;
+    update a;
+
+    int b = a + 4;
+
+}
