@@ -52,24 +52,21 @@ let check_valid (cx : contexts) (v : string) : unit =
 let rec helper_update_valid (spec_lst : string list) (valids : valid context) : unit =
   match spec_lst with
   | [] -> ()
-  | h :: t -> begin
-    if Assoc.mem h valids then begin
+  | h :: t ->
+    if Assoc.mem h valids then
       match Assoc.lookup h valids with
       | INVALID -> failwith (h ^ " has not been updated yet")
       | VALID -> helper_update_valid t valids
-      end
     else
       helper_update_valid t valids
-  end
 
 let update_valid (cx : contexts) (e : aexp) : contexts =
   let (x, t) = e in
   match x with
-  | Var v -> begin
+  | Var v ->
       let spec_lst = Assoc.lookup v cx._bindings.rd in
       helper_update_valid spec_lst cx._bindings.rv;
       CheckUtil.bind cx v (Val (VALID))
-    end
   | _ -> failwith "Update expression can only be used with a variable"
 
 let rec helper_invalidate_lst (cx : contexts) (cli_lst : string list) : contexts =
@@ -102,7 +99,6 @@ let rec helper_add_client (cx : contexts) (spec_lst : string list) (v : string) 
         let cx' = CheckUtil.bind cx h (Cli [v]) in
         helper_add_client cx' t v
       
-
 let add_client (cx : contexts) (e : aexp) (v : string) : contexts =
   let spec_lst = specials e in
   helper_add_client cx spec_lst v

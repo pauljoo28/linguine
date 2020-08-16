@@ -1,0 +1,33 @@
+declare int +(int x, int y);
+
+void main() {
+
+    int a = 2;
+
+    // Normal
+    int x = 2;
+    int y = 3;
+
+    int dec1 := x;
+    int dec2 := x + y;
+
+    int dec3 := dec1 + y;
+    int dec4 := dec1 + dec2;
+
+    int dec5 := y;
+
+    x = 3;
+
+    int test = dec5;
+
+    // Causes failure
+    // test = dec4; 
+    // test = dec3;
+    // update dec3;
+
+    update dec1;
+    update dec3;
+    test = dec3;
+
+
+}
