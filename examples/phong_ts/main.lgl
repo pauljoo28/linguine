@@ -9,6 +9,7 @@ const WebGLUniformLocation loc_uProjection;
 const WebGLUniformLocation loc_uView;
 const WebGLUniformLocation loc_uModel;
 const WebGLUniformLocation loc_uLight;
+const WebGLUniformLocation loc_uModelView;
 const float loc_aPosition;
 const float loc_aNormal;
 const lgl.Mesh mesh;
@@ -21,13 +22,19 @@ frame world has dimension 3;
 frame camera has dimension 3;
 frame proj has dimension 3;
 
+const hom<model>.transformation<camera> uDummyModelView;
+const hom<model>.transformation<world> uDummyModel;
+const hom<model>.transformation<world> unary;
+
 const hom<model>.transformation<world> uModel;
+const hom<model>.transformation<camera> uModelView;
 const cart3<world>.point uLight;
 
 
 void render(hom<world>.transformation<camera> uView,  hom<camera>.transformation<proj> projection){
     // Rotate the model a little bit on each frame.
-    rotateY(uModel, uModel, 0.1);
+    uModel = rotateY(uDummyModel, uDummyModel, 0.1);
+    uModelView = multiply(uDummyModelView, uView, uModel);
 
     // Use our shader pair.
     gl.useProgram(program);
@@ -36,6 +43,7 @@ void render(hom<world>.transformation<camera> uView,  hom<camera>.transformation
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, uView);
     gl.uniformMatrix4fv(loc_uModel, false, uModel);
+    gl.uniformMatrix4fv(loc_uModelView, false, uModelView);
     gl.uniform3fv(loc_uLight, uLight);
 
     // Set the attribute arrays.
@@ -59,6 +67,7 @@ void main(){
     loc_uView = lgl.uniformLoc(gl, program, "uView");
     loc_uModel = lgl.uniformLoc(gl, program, "uModel");
     loc_uLight = lgl.uniformLoc(gl, program, "uLight");
+    loc_uModelView = lgl.uniformLoc(gl, program, "uModelView");
     loc_aPosition = lgl.attribLoc(gl, program, "aPosition");
     loc_aNormal = lgl.attribLoc(gl, program, "aNormal");
 
@@ -66,7 +75,9 @@ void main(){
     mesh = lgl.getBunny(gl);
 
     // Initialize the model position.
-    uModel = mat4.create();
+    uDummyModel = mat4.create();
+    uDummyModelView = mat4.create();
+    unary = mat4.create();
 
     // Position the light source for the lighting effect.
     uLight = vec3.fromValues(20., 0., 20.);
