@@ -15,18 +15,18 @@ frame camera has dimension 3;
 varying cart3<model>.point vPosition;
 uniform hom<model>.transformation<world> uModel;
 uniform hom<world>.transformation<camera> uView;
+uniform hom<model>.transformation<camera> uModelView;
 varying cart3<model>.vector vNormal;
 uniform cart3<world>.point uLight;
 
 void main() {
     // vec4 gl_FragColor = vec4(uLight, .9);
-    hom<model>.transformation<camera> uModelView = uView * uModel;
     color ambient = [0.1, 0., 0.];
     color diffColor = [0.4, 0.3, 0.8];
     color specColor = [1.0, 1.0, 1.0];
 
     auto worldPos = hom_reduce(uModel*homify(vPosition));
-    auto camPos = hom_reduce(uView*uModel*homify(vPosition));
+    auto camPos = hom_reduce(uModelView*homify(vPosition));
     auto worldNorm = normalize(hom_reduce(uModel*homify(vNormal)));
 
     auto lightDir = normalize(uLight - worldPos);
