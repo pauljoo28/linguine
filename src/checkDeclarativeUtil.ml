@@ -38,7 +38,7 @@ let specials (ae : aexp) : string list =
 
 let bind_stip (cx : contexts) (id : string) (e : aexp) : contexts =
   let cx' = CheckUtil.bind cx id (Dep (specials e)) in
-  let cx'' = CheckUtil.bind cx' id (Val (VALID)) in
+  let cx'' = CheckUtil.bind cx' id (Val (INVALID)) in
   CheckUtil.bind cx'' id (Stip e)
 
 let is_valid (cx : contexts) (v : string) : unit =

@@ -160,6 +160,9 @@ let term ==
   | m = modification*; TYP; x = id_hack; IS; t = typ; SEMI;
     <Typ>
   | m = modification*; sq = storage_qual; t = typ;
+    x = id_hack; v = preceded(REQUIRES, node(exp)); SEMI;
+    { GlobalVar(Require :: m, sq, t, x, Some v) }
+  | m = modification*; sq = storage_qual; t = typ;
     x = id_hack; v = preceded(GETS, node(exp))?; SEMI;
     <GlobalVar>
   | f = fn;
