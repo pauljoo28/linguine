@@ -27,14 +27,16 @@ const hom<model>.transformation<world> uDummyModel;
 const hom<model>.transformation<world> unary;
 
 const hom<model>.transformation<world> uModel;
-const hom<model>.transformation<camera> uModelView;
+const hom<model>.transformation<camera> uModelView := multiply(uDummyModelView, uView, uModel);
+//const hom<model>.transformation<camera> uModelView;
 const cart3<world>.point uLight;
 
 
 void render(hom<world>.transformation<camera> uView,  hom<camera>.transformation<proj> projection){
     // Rotate the model a little bit on each frame.
     uModel = rotateY(uDummyModel, uDummyModel, 0.1);
-    uModelView = multiply(uDummyModelView, uView, uModel);
+    update uModelView;
+    // uModelView = multiply(uDummyModelView, uView, uModel);
 
     // Use our shader pair.
     gl.useProgram(program);

@@ -1132,14 +1132,31 @@ let check_fn (cx : contexts) ((f, cl) : fn) (scheme : string option) :
 let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
     contexts * TypedAst.global_var option =
   debug_print ">> check_global_variable" ;
-  check_typ_valid cx t ;
-  let e' = Option.map (fun x -> check_aexp cx x) e in
-  (match e' with Some (_, te) -> check_assign cx t (Var id) te | None -> ()) ;
-  let gvr =
-    if has_modification cx ml External then None
-    else Some (sq, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
-  in
-  (bind_typ cx id ml t, gvr)
+  if not (has_modification cx ml Require) then begin
+    check_typ_valid cx t ;
+    let e' = Option.map (fun x -> check_aexp cx x) e in
+    (match e' with Some (_, te) -> check_assign cx t (Var id) te | None -> ()) ;
+    let gvr =
+      if has_modification cx ml External then None
+      else Some (sq, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
+    in
+    (bind_typ cx id ml t, gvr)
+  end
+  else begin
+    check_typ_valid cx t ;
+    let e' = None in
+    let es = match e with
+      | Some x -> x
+      | _ -> failwith "Should not be parsed"
+    in
+    let cx' = CheckDeclarativeUtil.bind_clients cx es id in
+    let cx'' = CheckDeclarativeUtil.bind_stip cx' id es in
+    let gvr =
+      if has_modification cx ml External then None
+      else Some (sq, typ_erase cx'' t, id, Option.map (fun x -> exp_to_texp cx'' x) e')
+    in
+    (bind_typ cx'' id ml t, gvr)
+  end
 
 let check_frame (cx : contexts) ((id, d) : frame) : contexts =
   debug_print (">> check_frame " ^ id) ;
